@@ -91,6 +91,11 @@ function tokenHashesMatch(left: string, right: string) {
 }
 
 function requestBaseUrl(req: Request) {
+  // Prefer the explicit public URL when configured (e.g. Phala Cloud deployments
+  // where the reverse proxy may not forward x-forwarded-proto).
+  const publicUrl = process.env.PAPERCLIP_PUBLIC_URL?.trim();
+  if (publicUrl) return publicUrl.replace(/\/+$/, "");
+
   const forwardedProto = req.header("x-forwarded-proto");
   const proto = forwardedProto?.split(",")[0]?.trim() || req.protocol || "http";
   const host =
@@ -1181,8 +1186,8 @@ export function buildInviteOnboardingTextDocument(
         adapterType: "openclaw_gateway",
         capabilities: "OpenClaw agent adapter",
         agentDefaultsPayload: {
-          url: "ws://127.0.0.1:18789",
-          paperclipApiUrl: "http://host.docker.internal:3100",
+          url: "wss://your-openclaw-gateway:18789",
+          paperclipApiUrl: "${requestBaseUrl(req)}",
           headers: { "x-openclaw-token": token },
           waitTimeoutMs: 120000,
           sessionKeyStrategy: "issue",
