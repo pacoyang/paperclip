@@ -1,0 +1,104 @@
+# =============================================================================
+# Paperclip Docker Compose - Phala Cloud Deployment
+# =============================================================================
+# Deploy on Phala Cloud with:
+#   phala deploy --name paperclip --compose docker-compose.yml --instance-type tdx.large --disk-size 20 --image dstack-dev-0.5.6 --node-id 27 --env-file .env
+#
+# Access: http://<phala-cloud-endpoint>:3100
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # Paperclip Application
+  # ===========================================================================
+  paperclip:
+    image: ghcr.io/paperclipai/paperclip:latest
+    container_name: paperclip
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 100000
+        hard: 100000
+    ports:
+      - "3100:3100"
+    volumes:
+      - paperclip_data:/paperclip
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3100
+      - SERVE_UI=true
+      - PAPERCLIP_HOME=/paperclip
+      - PAPERCLIP_DEPLOYMENT_MODE=authenticated
+      - PAPERCLIP_DEPLOYMENT_EXPOSURE=${PAPERCLIP_DEPLOYMENT_EXPOSURE:-public}
+      # Database
+      - DATABASE_URL=postgres://paperclip:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/paperclip
+      # Public URL (set to your Phala Cloud endpoint)
+      - PAPERCLIP_PUBLIC_URL=${PAPERCLIP_PUBLIC_URL:?PAPERCLIP_PUBLIC_URL must be set}
+      # Auth
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}
+      - PAPERCLIP_AUTH_PUBLIC_BASE_URL=${PAPERCLIP_PUBLIC_URL}
+      - BETTER_AUTH_TRUSTED_ORIGINS=${PAPERCLIP_PUBLIC_URL}
+      # Allowed hostnames (for private exposure mode, comma-separated)
+      - PAPERCLIP_ALLOWED_HOSTNAMES=${PAPERCLIP_ALLOWED_HOSTNAMES:-}
+      # Signup control
+      - PAPERCLIP_AUTH_DISABLE_SIGN_UP=${PAPERCLIP_AUTH_DISABLE_SIGN_UP:-false}
+      # API Keys (optional)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # Timezone
+      - TZ=${TZ:-UTC}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - paperclip-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/health >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ===========================================================================
+  # PostgreSQL Database
+  # ===========================================================================
+  postgres:
+    image: postgres:17-alpine
+    container_name: paperclip-postgres
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 100000
+        hard: 100000
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=paperclip
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      - POSTGRES_DB=paperclip
+      - TZ=${TZ:-UTC}
+    networks:
+      - paperclip-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperclip -d paperclip"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  paperclip_data:
+    driver: local
+  postgres_data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  paperclip-network:
+    driver: bridge
