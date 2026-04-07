@@ -1115,9 +1115,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     idempotencyKey: ctx.runId,
   };
   delete agentParams.text;
-  // Do not attach paperclip metadata as a top-level field — OpenClaw gateways
-  // with strict param validation reject unknown properties. The essential info
-  // (runId, agentId, apiUrl, etc.) is already in the message text.
+  agentParams.paperclip = paperclipPayload;
 
   const configuredAgentId = nonEmpty(ctx.config.agentId);
   if (configuredAgentId && !nonEmpty(agentParams.agentId)) {
