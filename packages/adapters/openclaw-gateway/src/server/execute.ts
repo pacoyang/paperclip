@@ -1124,6 +1124,17 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     agentParams.agentId = configuredAgentId;
   }
 
+  // When targeting a specific OpenClaw agent, prefix the session key so it
+  // matches the agent scope. OpenClaw rejects requests where agentId and
+  // session key agent don't match.
+  const targetAgentId = nonEmpty(agentParams.agentId);
+  if (targetAgentId && typeof agentParams.sessionKey === "string") {
+    const sk = agentParams.sessionKey as string;
+    if (!sk.startsWith(`agent:${targetAgentId}:`)) {
+      agentParams.sessionKey = `agent:${targetAgentId}:${sk}`;
+    }
+  }
+
   if (typeof agentParams.timeout !== "number") {
     agentParams.timeout = waitTimeoutMs;
   }
