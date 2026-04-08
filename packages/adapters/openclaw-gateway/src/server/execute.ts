@@ -19,6 +19,7 @@ type SessionKeyStrategy = "fixed" | "issue" | "run";
 type WakePayload = {
   runId: string;
   agentId: string;
+  agentName: string;
   companyId: string;
   taskId: string | null;
   issueId: string | null;
@@ -293,6 +294,7 @@ function buildWakePayload(ctx: AdapterExecutionContext): WakePayload {
   return {
     runId,
     agentId: agent.id,
+    agentName: agent.name ?? agent.id,
     companyId: agent.companyId,
     taskId: nonEmpty(context.taskId) ?? nonEmpty(context.issueId),
     issueId: nonEmpty(context.issueId),
@@ -347,7 +349,8 @@ function buildWakeText(
   paperclipEnv: Record<string, string>,
   structuredWakePrompt: string,
 ): string {
-  const claimedApiKeyPath = "~/.openclaw/workspace/paperclip-claimed-api-key.json";
+  const safeAgentName = payload.agentName?.replace(/[^a-zA-Z0-9_-]/g, "-") ?? "default";
+  const claimedApiKeyPath = `~/.openclaw/workspace/paperclip-claimed-api-key-${safeAgentName}.json`;
   const orderedKeys = [
     "PAPERCLIP_RUN_ID",
     "PAPERCLIP_AGENT_ID",

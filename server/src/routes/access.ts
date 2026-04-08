@@ -1041,7 +1041,7 @@ function buildInviteOnboardingManifest(
     ),
     onboarding: {
       instructions:
-        "Join as an OpenClaw Gateway agent, save your one-time claim secret, wait for board approval, then claim your API key. Save the claim response token to ~/.openclaw/workspace/paperclip-claimed-api-key.json and load PAPERCLIP_API_KEY from that file before starting heartbeat loops. You MUST submit adapterType='openclaw_gateway', set agentDefaultsPayload.url to your ws:// or wss:// OpenClaw gateway endpoint, and include agentDefaultsPayload.headers.x-openclaw-token (or legacy x-openclaw-auth).",
+        "Join as an OpenClaw Gateway agent, save your one-time claim secret, wait for board approval, then claim your API key. Save the claim response token to ~/.openclaw/workspace/paperclip-claimed-api-key-{safeAgentName}.json (where {safeAgentName} is your agentName with non-alphanumeric chars except -/_ replaced by -) and load PAPERCLIP_API_KEY from that file before starting heartbeat loops. You MUST submit adapterType='openclaw_gateway', set agentDefaultsPayload.url to your ws:// or wss:// OpenClaw gateway endpoint, and include agentDefaultsPayload.headers.x-openclaw-token (or legacy x-openclaw-auth).",
       inviteMessage: extractInviteMessage(invite),
       recommendedAdapterType: "openclaw_gateway",
       requiredFields: {
@@ -1189,6 +1189,7 @@ export function buildInviteOnboardingTextDocument(
           url: "wss://your-openclaw-gateway:18789",
           paperclipApiUrl: "${requestBaseUrl(req)}",
           headers: { "x-openclaw-token": token },
+          payloadTemplate: { agentId: "main" },
           waitTimeoutMs: 120000,
           sessionKeyStrategy: "issue",
           role: "operator",
@@ -1203,6 +1204,7 @@ export function buildInviteOnboardingTextDocument(
     onboarding.registrationEndpoint.url
   }
 
+    IMPORTANT: Set agentDefaultsPayload.payloadTemplate.agentId to the OpenClaw agent ID you want this Paperclip agent to route to (e.g. "main", "clawdi-crypto-agent"). This determines which OpenClaw agent handles the work. Use agentName as a human-readable label for the Paperclip agent.
     IMPORTANT: You MUST include agentDefaultsPayload.headers.x-openclaw-token with your gateway token.
     Legacy x-openclaw-auth is also accepted, but x-openclaw-token is preferred.
     Use adapterType "openclaw_gateway" and a ws:// or wss:// gateway URL.
@@ -1222,6 +1224,7 @@ export function buildInviteOnboardingTextDocument(
         "url": "wss://your-openclaw-gateway.example",
         "paperclipApiUrl": "https://paperclip-hostname-your-agent-can-reach:3100",
         "headers": { "x-openclaw-token": "replace-me" },
+        "payloadTemplate": { "agentId": "main" },
         "waitTimeoutMs": 120000,
         "sessionKeyStrategy": "issue",
         "role": "operator",
@@ -1247,10 +1250,12 @@ export function buildInviteOnboardingTextDocument(
       "claimSecret": "<one-time-claim-secret>"
     }
 
-    On successful claim, save the full JSON response to:
+    On successful claim, save the full JSON response to a file named after the agent:
 
-    - ~/.openclaw/workspace/paperclip-claimed-api-key.json
-    chmod 600 ~/.openclaw/workspace/paperclip-claimed-api-key.json
+    - ~/.openclaw/workspace/paperclip-claimed-api-key-{safeAgentName}.json
+    where {safeAgentName} = agentName with all non-alphanumeric characters (except - and _) replaced by "-"
+    (e.g. "Paco's Clawdi" → paperclip-claimed-api-key-Paco-s-Clawdi.json)
+    chmod 600 ~/.openclaw/workspace/paperclip-claimed-api-key-{safeAgentName}.json
 
     And set the PAPERCLIP_API_KEY and PAPERCLIP_API_URL in your environment variables as specified here:
     https://docs.openclaw.ai/help/environment
