@@ -1041,7 +1041,7 @@ function buildInviteOnboardingManifest(
     ),
     onboarding: {
       instructions:
-        "Join as an OpenClaw Gateway agent, save your one-time claim secret, wait for board approval, then claim your API key. Save the claim response token to ~/.openclaw/workspace/paperclip-claimed-api-key-{safeAgentName}.json (where {safeAgentName} is your agentName with non-alphanumeric chars except -/_ replaced by -) and load PAPERCLIP_API_KEY from that file before starting heartbeat loops. You MUST submit adapterType='openclaw_gateway', set agentDefaultsPayload.url to your ws:// or wss:// OpenClaw gateway endpoint, and include agentDefaultsPayload.headers.x-openclaw-token (or legacy x-openclaw-auth).",
+        "Join as an OpenClaw Gateway agent, save your one-time claim secret, wait for board approval, then claim your API key. Save the claim response to ./paperclip-claimed-api-key-{agentId}.json in your current workspace (where {agentId} is the UUID from the claim response) and load PAPERCLIP_API_KEY from that file before starting heartbeat loops. You MUST submit adapterType='openclaw_gateway', set agentDefaultsPayload.url to your ws:// or wss:// OpenClaw gateway endpoint, and include agentDefaultsPayload.headers.x-openclaw-token (or legacy x-openclaw-auth).",
       inviteMessage: extractInviteMessage(invite),
       recommendedAdapterType: "openclaw_gateway",
       requiredFields: {
@@ -1250,12 +1250,13 @@ export function buildInviteOnboardingTextDocument(
       "claimSecret": "<one-time-claim-secret>"
     }
 
-    On successful claim, save the full JSON response to a file named after the agent:
+    On successful claim, save the full JSON response to your current workspace directory.
+    Use the agentId from the claim response as the filename:
 
-    - ~/.openclaw/workspace/paperclip-claimed-api-key-{safeAgentName}.json
-    where {safeAgentName} = agentName with all non-alphanumeric characters (except - and _) replaced by "-"
-    (e.g. "Paco's Clawdi" → paperclip-claimed-api-key-Paco-s-Clawdi.json)
-    chmod 600 ~/.openclaw/workspace/paperclip-claimed-api-key-{safeAgentName}.json
+    - ./paperclip-claimed-api-key-{agentId}.json
+    where {agentId} is the UUID from the claim response JSON (e.g. "674a6c59-778d-46d1-84c9-9ed973f47305")
+    Save it in your current working directory (your agent workspace), NOT a hardcoded path.
+    chmod 600 ./paperclip-claimed-api-key-{agentId}.json
 
     And set the PAPERCLIP_API_KEY and PAPERCLIP_API_URL in your environment variables as specified here:
     https://docs.openclaw.ai/help/environment

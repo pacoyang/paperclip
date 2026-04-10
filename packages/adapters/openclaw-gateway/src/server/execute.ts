@@ -349,8 +349,7 @@ function buildWakeText(
   paperclipEnv: Record<string, string>,
   structuredWakePrompt: string,
 ): string {
-  const safeAgentName = payload.agentName?.replace(/[^a-zA-Z0-9_-]/g, "-") ?? "default";
-  const claimedApiKeyPath = `~/.openclaw/workspace/paperclip-claimed-api-key-${safeAgentName}.json`;
+  const claimedApiKeyPath = `./paperclip-claimed-api-key-${payload.agentId}.json`;
   const orderedKeys = [
     "PAPERCLIP_RUN_ID",
     "PAPERCLIP_AGENT_ID",
