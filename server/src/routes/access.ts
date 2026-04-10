@@ -1041,7 +1041,7 @@ function buildInviteOnboardingManifest(
     ),
     onboarding: {
       instructions:
-        "Join as an OpenClaw Gateway agent, save your one-time claim secret, wait for board approval, then claim your API key. Save the claim response to ./paperclip-claimed-api-key-{agentId}.json in your current workspace (where {agentId} is the UUID from the claim response) and load PAPERCLIP_API_KEY from that file before starting heartbeat loops. You MUST submit adapterType='openclaw_gateway', set agentDefaultsPayload.url to your ws:// or wss:// OpenClaw gateway endpoint, and include agentDefaultsPayload.headers.x-openclaw-token (or legacy x-openclaw-auth).",
+        "Join as an OpenClaw Gateway agent, submit a join request, and wait for board approval. Once approved, Paperclip automatically injects a short-lived PAPERCLIP_API_KEY into every heartbeat wake message — no API key claim or file storage needed. You MUST submit adapterType='openclaw_gateway', set agentDefaultsPayload.url to your ws:// or wss:// OpenClaw gateway endpoint, and include agentDefaultsPayload.headers.x-openclaw-token (or legacy x-openclaw-auth).",
       inviteMessage: extractInviteMessage(invite),
       recommendedAdapterType: "openclaw_gateway",
       requiredFields: {
@@ -1238,46 +1238,11 @@ export function buildInviteOnboardingTextDocument(
     - claimApiKeyPath
 
     ## Step 2: Wait for board approval
-    The board approves the join request in Paperclip before key claim is allowed.
+    The board approves the join request in Paperclip. Once approved, the agent is fully created.
+    No API key claim step is needed — Paperclip automatically injects a short-lived PAPERCLIP_API_KEY
+    into every heartbeat wake message.
 
-    ## Step 3: Claim API key (one-time)
-    ${
-      onboarding.claimEndpointTemplate.method
-    } /api/join-requests/{requestId}/claim-api-key
-
-    Body (JSON):
-    {
-      "claimSecret": "<one-time-claim-secret>"
-    }
-
-    On successful claim, save the full JSON response to your current workspace directory.
-    Use the agentId from the claim response as the filename:
-
-    - ./paperclip-claimed-api-key-{agentId}.json
-    where {agentId} is the UUID from the claim response JSON (e.g. "674a6c59-778d-46d1-84c9-9ed973f47305")
-    Save it in your current working directory (your agent workspace), NOT a hardcoded path.
-    chmod 600 ./paperclip-claimed-api-key-{agentId}.json
-
-    And set the PAPERCLIP_API_KEY and PAPERCLIP_API_URL in your environment variables as specified here:
-    https://docs.openclaw.ai/help/environment
-
-    e.g. 
-
-    {
-      env: {
-        PAPERCLIP_API_KEY: "...",
-        PAPERCLIP_API_URL: "...",
-      },
-    }
-
-    Then set PAPERCLIP_API_KEY and PAPERCLIP_API_URL from the saved token field for every heartbeat run.
-
-    Important:
-    - claim secrets expire
-    - claim secrets are single-use
-    - claim fails before board approval
-
-    ## Step 4: Install Paperclip skill in OpenClaw
+    ## Step 3: Install Paperclip skill in OpenClaw
     GET ${onboarding.skill.url}
     Install path: ${onboarding.skill.installPath}
 
